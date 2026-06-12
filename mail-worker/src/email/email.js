@@ -38,16 +38,28 @@ export async function email(message, env, ctx) {
 			return;
 		}
 
+		// 원본 바이트를 그대로 모아 PostalMime에 전달한다.
+		// (UTF-8로 미리 디코딩하면 EUC-KR 등 비 UTF-8 본문이 깨지므로,
+		//  charset 해석은 PostalMime이 MIME 파트별로 처리하도록 맡긴다)
 		const reader = message.raw.getReader();
-		let content = '';
+		const chunks = [];
+		let totalLength = 0;
 
 		while (true) {
 			const { done, value } = await reader.read();
 			if (done) break;
-			content += new TextDecoder().decode(value);
+			chunks.push(value);
+			totalLength += value.length;
 		}
 
-		const email = await PostalMime.parse(content);
+		const rawBytes = new Uint8Array(totalLength);
+		let offset = 0;
+		for (const chunk of chunks) {
+			rawBytes.set(chunk, offset);
+			offset += chunk.length;
+		}
+
+		const email = await PostalMime.parse(rawBytes);
 
 
 		const blockFlag = checkBlock(blackSubject, blackContent, blackFrom, email);
