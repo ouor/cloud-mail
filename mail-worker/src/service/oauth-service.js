@@ -1,4 +1,5 @@
 import BizError from "../error/biz-error";
+import { t } from '../i18n/i18n';
 import orm from "../entity/orm";
 import {oauth} from "../entity/oauth";
 import { eq, inArray } from 'drizzle-orm';
@@ -17,7 +18,7 @@ const oauthService = {
 		let userRow = await userService.selectByIdIncludeDel(c, oauthRow.userId);
 
 		if (userRow) {
-			throw new BizError('用户已绑定有邮箱')
+			throw new BizError(t('oauthAlreadyBound'))
 		}
 
 		await loginService.register(c, { email, password: cryptoUtils.genRandomPwd(), code }, true);

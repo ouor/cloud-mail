@@ -66,6 +66,11 @@ const en = {
 	notAdmin: 'The entered email is not an administrator email',
 	emailExistDatabase: 'Email already exists in the database',
 	notConfigOss: 'Object storage not configured',
+	oauthAlreadyBound: 'This account is already bound to an email',
+	updateEmailStatusFail: 'Failed to update email status record',
+	dbNotInit: 'Database not initialized',
+	kvNotBound: 'KV database not bound',
+	d1NotBound: 'D1 database not bound',
 	perms: {
 		"邮件": "Emails",
 		"邮件发送": "Send Email",
