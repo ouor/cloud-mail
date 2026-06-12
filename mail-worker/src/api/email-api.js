@@ -34,3 +34,13 @@ app.put('/email/read', async (c) => {
 	return c.json(result.ok());
 })
 
+app.get('/email/export', (c) => {
+	const stream = emailService.exportMboxStream(c, userContext.getUserId(c));
+	return new Response(stream, {
+		headers: {
+			'Content-Type': 'application/mbox; charset=utf-8',
+			'Content-Disposition': 'attachment; filename="cloud-mail-export.mbox"'
+		}
+	});
+})
+

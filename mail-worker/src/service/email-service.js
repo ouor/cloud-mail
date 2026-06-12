@@ -22,6 +22,7 @@ import domainUtils from '../utils/domain-uitls';
 import account from "../entity/account";
 import { att } from '../entity/att';
 import telegramService from './telegram-service';
+import mboxUtils from '../utils/mbox-utils';
 
 const emailService = {
 
@@ -132,6 +133,41 @@ const emailService = {
 		}
 
 		return { list, total: totalRow.total, latestEmail };
+	},
+
+	// 以 mbox 流式导出当前用户的全部邮件 (全部账号、收发件, 仅正文)
+	exportMboxStream(c, userId) {
+		const encoder = new TextEncoder();
+		const pageSize = 100;
+		let cursor = Number.MAX_SAFE_INTEGER;
+		return new ReadableStream({
+			async pull(controller) {
+				try {
+					const rows = await orm(c).select().from(email)
+						.where(and(
+							eq(email.userId, userId),
+							eq(email.isDel, isDel.NORMAL),
+							lt(email.emailId, cursor)
+						))
+						.orderBy(desc(email.emailId))
+						.limit(pageSize)
+						.all();
+
+					if (rows.length === 0) {
+						controller.close();
+						return;
+					}
+
+					for (const row of rows) {
+						controller.enqueue(encoder.encode(mboxUtils.toMbox(row)));
+					}
+
+					cursor = rows[rows.length - 1].emailId;
+				} catch (e) {
+					controller.error(e);
+				}
+			}
+		});
 	},
 
 	async delete(c, params, userId) {

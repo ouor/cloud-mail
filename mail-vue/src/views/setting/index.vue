@@ -42,6 +42,15 @@
         <el-option label="English" value="en" @pointerdown.prevent.stop="changeLang('en')"/>
       </el-select>
     </div>
+    <div class="export-email">
+      <div class="title">{{$t('exportEmails')}}</div>
+      <div style="color: var(--regular-text-color);">
+        {{$t('exportEmailsDesc')}}
+      </div>
+      <div>
+        <el-button type="primary" :loading="exportLoading" @click="exportAllEmails">{{$t('exportEmailsBtn')}}</el-button>
+      </div>
+    </div>
     <div class="del-email" v-perm="'my:delete'">
       <div class="title">{{$t('deleteUser')}}</div>
       <div style="color: var(--regular-text-color);">
@@ -66,6 +75,7 @@ import {resetPassword, userDelete} from "@/request/my.js";
 import {useUserStore} from "@/store/user.js";
 import router from "@/router/index.js";
 import {accountSetName} from "@/request/account.js";
+import {emailExport} from "@/request/email.js";
 import {useAccountStore} from "@/store/account.js";
 import {useI18n} from "vue-i18n";
 import {useSettingStore} from "@/store/setting.js";
@@ -78,10 +88,34 @@ const setPwdLoading = ref(false)
 const setNameShow = ref(false)
 const accountName = ref(null)
 const langSelect = ref(settingStore.lang)
+const exportLoading = ref(false)
 
 defineOptions({
   name: 'setting'
 })
+
+async function exportAllEmails() {
+  exportLoading.value = true
+  try {
+    const res = await emailExport()
+    const url = URL.createObjectURL(res.data)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'cloud-mail-export.mbox'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    ElMessage({
+      message: t('exportFailMsg'),
+      type: 'error',
+      plain: true,
+    })
+  } finally {
+    exportLoading.value = false
+  }
+}
 
 function showSetName() {
   accountName.value = userStore.user.name
@@ -284,6 +318,14 @@ function submitPwd() {
     .language-select {
       width: 100px;
     }
+  }
+
+  .export-email {
+    font-size: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-bottom: 40px;
   }
 
   .del-email {
