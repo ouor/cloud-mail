@@ -194,9 +194,24 @@ const registerForm = reactive({
   confirmPassword: '',
   code: null
 })
-const domainList = settingStore.domainList;
+// 현재 접속 호스트와 일치하는 도메인을 드롭다운 최상단으로 끌어올린다
+function reorderDomainByHost(list) {
+  if (!Array.isArray(list) || list.length === 0) return list || []
+  const host = window.location.hostname.toLowerCase()
+  const idx = list.findIndex(item => {
+    const d = String(item).replace(/^@/, '').toLowerCase()
+    return d && (host === d || host.endsWith('.' + d))
+  })
+  if (idx > 0) {
+    const copy = [...list]
+    copy.unshift(copy.splice(idx, 1)[0])
+    return copy
+  }
+  return list
+}
+const domainList = ref(reorderDomainByHost(settingStore.domainList))
 const registerLoading = ref(false)
-suffix.value = domainList[0]
+suffix.value = domainList.value[0] || ''
 const verifyShow = ref(false)
 let verifyToken = ''
 let turnstileId = null
@@ -421,8 +436,9 @@ function refreshWebsiteConfig() {
   websiteConfig().then(setting => {
     settingStore.settings = setting
     settingStore.domainList = setting.domainList
-    if (!suffix.value && setting.domainList.length > 0) {
-      suffix.value = setting.domainList[0]
+    domainList.value = reorderDomainByHost(setting.domainList)
+    if (!suffix.value && domainList.value.length > 0) {
+      suffix.value = domainList.value[0]
     }
     document.title = setting.title
   }).catch(e => {
